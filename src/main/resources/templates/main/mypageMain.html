@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>나의 페이지 메인</title>
+<style>
+#main{
+	width: 1100px;
+	height: 700px;
+	margin: auto;
+}
+#nav{	/* header의 <nav>태그와의 충돌을 피하기 위해, 아이디를 설정해서 사용함 */
+	width: 150px;
+	height: 100%;
+	background: #5FC5F7;
+	padding: 10px;
+	float: left;
+}
+#section {
+	width: 500px;
+	height: 80%;
+	background: white;
+	float: left;
+}
+#main:after{
+	clear:both;	/* float 속성 해제 */
+}
+</style>
+</head>
+<body>
+<div class="container">
+	<div id="main">
+		<nav id="nav">
+			<p> <a href="/mypageMain">My page</a> </p>
+			<a href="#">예매내역</a><br>			
+			<a href="#">구매내역</a><br>
+			<a href="#">멤버쉽 포인트</a><br>
+			<a href="#">내 찜내역</a><br>
+			<a href="#">나의 문의내역</a><br>
+			<a href="/member/modifyForm">내정보 변경</a><br>
+			<a href="#">회원탈퇴</a><br><br><br><br>
+			<a href="/main">메인화면</a>
+		</nav>
+		
+		<section id="section">
+			<th:block th:if="${req == 'none'}">
+				<div>
+					<table border="1">
+						<tr>
+							<td>
+							    <th:block th:if="${member.grade == 'vvip'}">
+							        <img src="/gradeimage/vvip.jpg" width="100" height="100">
+							    </th:block>
+							    <th:block th:if="${member.grade == 'vip'}">
+							        <img src="/gradeimage/vip.jpg" width="100" height="100">
+							    </th:block>
+							    <th:block th:if="${member.grade == 'gold'}">
+							        <img src="/gradeimage/gold.jpg" width="100" height="100">
+							    </th:block>
+							    <th:block th:if="${member.grade == 'silver'}">
+							        <img src="/gradeimage/silver.jpg" width="100" height="100">
+							    </th:block>
+							    <th:block th:if="${member.grade == 'basic'}">
+							        <img src="/gradeimage/basic.jpg" width="100" height="100">
+							    </th:block>
+							    반갑습니다, [[${member.name}]]님
+							</td>
+							<td> [[${member.vippoint}]] Vip Point   현재등급 [[${member.grade}]]</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								 
+							    <th:block th:if="${member.vippoint >= 5000}">
+							    	최고 등급 VVIP 입니다!
+							    </th:block>
+							    <th:block th:if="${member.vippoint < 5000 and member.vippoint >= 2000}">
+							    	다음 VVIP 등급 까지
+							        [[5000 - ${member.vippoint}]]
+							        P 남았어요!
+							    </th:block>
+							    <th:block th:if="${member.vippoint < 2000 and member.vippoint >= 500}">
+							    	다음 VIP 등급 까지
+							        [[2000 - ${member.vippoint}]]
+							        P 남았어요!							        
+							    </th:block>
+							    <th:block th:if="${member.vippoint < 500 and member.vippoint >= 100}">
+							    	다음 Gold 등급 까지
+							        [[500 - ${member.vippoint}]]
+							        P 남았어요!							        
+							    </th:block>
+							    <th:block th:if="${member.vippoint < 100 and member.vippoint >= 0}">
+							    	다음 Silver 등급 까지
+							        [[100 - ${member.vippoint}]]
+							        P 남았어요!							        
+							    </th:block>
+							    
+							</td>
+						</tr>
+						
+					</table>
+				</div>
+			</th:block>
+			<th:block th:if="${req != 'none'}">
+				<div th:replace="~{${req}}"></div>
+			</th:block>
+		</section>
+	</div>
+</div>
+</body>
+</html>

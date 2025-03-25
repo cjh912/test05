@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<style type="text/css">
+#header-container {
+	width: 100%;
+	background-color: #ffffff;
+	position: relative;
+	z-index: 10;
+}
+footer-container {
+	position: relative;
+	width: 100%;
+}
+.tab-container {
+    display: flex;
+    justify-content: center;
+    border-bottom: 2px solid #ddd;
+    margin-top: 20px;
+}
+.tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #666;
+}
+.tab.active {
+    border-bottom: 2px solid black;
+    color: black;
+}
+#tab-content {
+    margin-top: 20px;
+    padding: 10px;
+}
+.review-input {
+    margin-bottom: 20px;
+}
+
+.review-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.review-profile {
+    margin-right: 15px;
+}
+
+.review-profile img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.review-content {
+    flex: 1;
+}
+
+.review-meta {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.review-text {
+    font-size: 16px;
+}
+
+.review-like {
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+    align-self: center;
+}
+
+.content-box {
+    width: 900px;
+    margin: 0 auto;
+}
+
+.review-input-container {
+    position: relative;
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.review-input-container textarea {
+    width: 100%;
+    height: 80px;
+    border: none;
+    padding: 10px 120px 10px 10px;
+    resize: none;
+    outline: none;
+    font-size: 15px;
+}
+
+.review-input-container button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 110px;
+    height: 100%;
+    border: none;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.2s ease;
+}
+
+.review-input-container button:hover {
+    background-color: #333;
+}
+
+.char-count {
+    position: absolute;
+    bottom: 10px;
+    right: 120px;
+    color: #999;
+    font-size: 13px;
+}
+
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+	<!-- 헤더 -->
+	<div id="header-container">
+		<div th:replace="~{layouts/header}"></div>
+	</div>
+
+	<div class="container" align="center" style="margin-top:100px; padding-bottom:100px;">
+		<table style="width: 900px; margin-left: auto; margin-right: auto;">
+			<tr>
+				<td rowspan="4" style="width:310px; padding-right:50px;">
+					<img alt="이미지" th:src="|/movie_poster/${movie_info.poster1}|" width="300" height="400">
+				</td>
+				<td align="left" style="height:50px;">[[${movie_info.title}]]</td>
+			</tr>
+			<tr>
+				<td style="height:20px;">[[${movie_info.title}]] | [[${movie_info.runningtime}]] | [[${movie_info.agerating}]] | [[${movie_info.total}]]</td>
+			</tr>
+			<tr>
+				<td>
+					<pre>[[${movie_info.synopsis}]]</pre>
+				</td>
+			</tr>
+			<tr>
+				<td style="height:50px;">
+					<a href="#">예매하기</a>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<!-- 🔹 상세정보 | 관람평(0) 탭 -->
+	<div class="tab-container">
+	    <span class="tab active" id="detail-tab">상세정보</span>
+	    <span class="tab" id="review-tab">관람평 (<span id="review-count">0</span>)</span>
+	</div>
+
+	<div id="detail-section" class="content-box">
+	<!-- 이곳에 Ajax로 영화정보가 동적으로 들어옴 -->
+	</div>
+
+	<!-- 🔹 리뷰 입력 & 목록 -->
+	<div id="tab-content" style="display: none;">
+
+		
+	    <div id="review-section" class="content-box">
+	        <!-- 리뷰 입력 폼 -->
+	        <!-- 로그인한 사용자만 입력 가능 -->
+			<div class="review-input" th:if="${sessionMemid != null}">
+			    <div class="review-input-container">
+			        <textarea id="comment" maxlength="330" placeholder="관람평을 작성해주세요."></textarea>
+			        <button id="submit-review-btn">관람평 작성</button>
+			        <div class="char-count"><span id="char-count-num">0</span>/330</div>
+			    </div>
+			    <input type="number" id="rating" min="1" max="10" placeholder="별점 (1~10)" style="margin-top:10px;width:110px;">
+			</div>
+	
+	        <!-- 비로그인 사용자에게 안내 -->
+	        <div class="review-input" th:if="${sessionMemid == null}">
+	            <p>리뷰를 작성하려면 <a href="/member/loginForm">로그인</a>이 필요합니다.</p>
+	        </div>
+	
+	        <!-- 리뷰 리스트 -->
+	        <ul id="review-list">
+	            <!-- AJAX로 불러온 리뷰들이 여기에 추가됨 -->
+	        </ul>
+	    </div>
+	</div>
+
+
+	<!--  footer -->
+	<div id="footer-container">
+		<div th:replace="~{layouts/footer}"></div>
+	</div>
+
+<script th:inline="javascript">
+let sessionUserId = '';
+let moviecode = '';
+
+function loadReviews() {
+    $.ajax({
+        url: `/movieinfo/review?moviecode=${moviecode}&start=1&end=100`,
+        type: "GET",
+        success: function (reviews) {
+            $("#review-list").html("");
+            $("#review-count").text(reviews.length);
+            
+            let myReviewHtml = "";
+            let otherReviewsHtml = "";
+
+            reviews.forEach(function (r) {
+                let gradeImage = '';
+                if (r.grade === 'vvip') gradeImage = '/gradeimage/vvip.jpg';
+                else if (r.grade === 'vip') gradeImage = '/gradeimage/vip.jpg';
+                else if (r.grade === 'gold') gradeImage = '/gradeimage/gold.jpg';
+                else if (r.grade === 'silver') gradeImage = '/gradeimage/silver.jpg';
+                else gradeImage = '/gradeimage/basic.jpg';
+
+                const isMyReview = r.user_id === sessionUserId;
+
+                const reviewHtml = `
+                    <li class="review-item">
+                        <div class="review-profile">
+                            <img src="${gradeImage}" alt="등급이미지">
+                        </div>
+                        <div class="review-content">
+                            <div class="review-meta">
+                                <strong>${r.user_id}</strong> | ${r.logtime}
+                                ${isMyReview ? '<span class="badge bg-secondary">나의리뷰</span>' : ''}
+                            </div>
+                            <div class="review-text">${r.review_comment} (⭐ ${r.rating}/10)</div>
+                            ${isMyReview ? `
+                                <div style="margin-top: 5px;">
+                                    <button class="edit-review-btn btn btn-sm btn-outline-primary" data-id="${r.reviewcode}">편집</button>
+                                    <button class="delete-review-btn btn btn-sm btn-outline-danger" data-id="${r.reviewcode}">삭제</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="review-like">
+                            👍 <span>0</span>
+                        </div>
+                    </li>
+                `;
+
+                if (isMyReview) {
+                    myReviewHtml = reviewHtml;
+                } else {
+                    otherReviewsHtml += reviewHtml;
+                }
+            });
+
+            $("#review-list").html(myReviewHtml + otherReviewsHtml);
+        },
+        error: function () {
+            alert("리뷰를 불러오는 데 실패했습니다.");
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    sessionUserId = /*[[${sessionMemid}]]*/ '';
+    moviecode = /*[[${movie_info.moviecode}]]*/ 1;
+
+    $(".tab").click(function () {
+        $(".tab").removeClass("active");
+        $(this).addClass("active");
+
+        if ($(this).attr("id") === "review-tab") {
+            $("#tab-content").show();
+            $("#detail-section").hide();
+            loadReviews();
+        } else {
+            $("#tab-content").hide();
+        }
+    });
+
+    $("#detail-tab").click(function () {
+        $(".tab").removeClass("active");
+        $(this).addClass("active");
+        $("#tab-content").hide();
+        $("#detail-section").show();
+        const info = /*[[${movie_info}]]*/ null;
+        const html = `
+            <h4 style="margin-top: 30px; font-weight: bold;">영화정보</h4>
+            <p><strong>장르:</strong> ${info.genre}</p>
+            <p><strong>감독:</strong> ${info.director}</p>
+            <p><strong>출연:</strong> ${info.actors}</p>
+            <p><strong>제작국가:</strong> ${info.country}</p>
+            <p><strong>상영등급:</strong> ${info.agerating}세 이상 관람가</p>
+            <p><strong>개봉일:</strong> ${info.releasedate}</p>
+            <p><strong>재생시간:</strong> ${info.runningtime}분</p>
+            <p><strong>누적 관객수:</strong> ${info.total}명</p>
+        `;
+        $("#detail-section").html(html);
+    });
+
+    $("#submit-review-btn").click(function () {
+        const ratingVal = parseInt($("#rating").val());
+
+        // 숫자가 아니거나 범위(1~10)를 벗어난 경우
+        if (isNaN(ratingVal) || ratingVal < 1 || ratingVal > 10) {
+            alert("별점은 1부터 10 사이의 숫자만 입력할 수 있습니다.");
+            $("#rating").val("");
+            return;
+        }
+        
+        $.ajax({
+            url: `/movieinfo/review/check?moviecode=${moviecode}`,
+            type: "GET",
+            success: function (exists) {
+                if (exists) {
+                    alert("이미 리뷰를 작성하셨습니다.");
+                    return;
+                }
+                const review = {
+                    moviecode: moviecode,
+                    user_id: sessionUserId,
+                    review_comment: $("#comment").val(),
+                    rating: $("#rating").val()
+                };
+                $.ajax({
+                    url: "/movieinfo/review",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(review),
+                    success: function () {
+                        $("#comment").val("");
+                        $("#rating").val("");
+                        loadReviews();
+                    }
+                });
+            }
+        });
+    });
+
+    $("#detail-tab").click();
+});
+
+//삭제 버튼 이벤트
+$(document).on('click', '.delete-review-btn', function () {
+    const reviewcode = $(this).data('id');
+    if (confirm("리뷰를 삭제하시겠습니까?")) {
+        $.ajax({
+            url: `/movieinfo/review/${reviewcode}`,
+            type: "DELETE",
+            success: function () {
+                alert("삭제되었습니다.");
+                loadReviews(); // ✅ 추가
+            },
+            error: function () {
+                alert("삭제에 실패했습니다.");
+            }
+        });
+    }
+});
+
+//수정 버튼 이벤트
+$(document).on('click', '.edit-review-btn', function () {
+    const reviewcode = $(this).data('id');
+    const newComment = prompt("수정할 내용을 입력하세요:");
+    const newRating = prompt("수정할 별점을 입력하세요 (1~10):");
+
+    if (newComment && newRating) {
+        $.ajax({
+            url: `/movieinfo/review/${reviewcode}`,
+            type: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify({ review_comment: newComment, rating: newRating }),
+            success: function () {
+                alert("수정되었습니다.");
+                loadReviews(); // ✅ 추가
+            },
+            error: function () {
+                alert("수정에 실패했습니다.");
+            }
+        });
+    }
+});
+
+//리뷰 textarea에 입력할 때마다 글자수 실시간 표시
+$(document).on('input', '#comment', function(){
+    let currentLength = $(this).val().length; // 현재 입력된 글자 수
+    $('#char-count-num').text(currentLength); // 실시간 업데이트
+});
+</script>
+
+
+</body>
+</html>
+

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<title>좌석 선택</title>
+<style>
+body {
+	font-family: Arial;
+	background-color: #242333;
+	color: #fff;
+	text-align: center;
+}
+.seat-map {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+.seat-row {
+	display: flex;
+}
+.seat {
+	border: 1px solid #aaa;
+	margin: 3px;
+	cursor: pointer;
+	width: 35px;
+	height: 35px;
+	line-height: 35px;
+	font-size: 0.9rem;
+}
+.seat.selected {
+	background-color: #6bc1f2;
+	color: #fff;
+}
+.couple-seat {
+	background-color: #ff758f;
+}
+.couple-seat.selected {
+	background-color: #ff3860;
+}
+.seat.sold {
+	background-color: #555 !important;
+	cursor: not-allowed;
+}
+#payBtn {
+	margin-top: 20px;
+	padding: 10px;
+	width: 250px;
+	display: none;
+	cursor: pointer;
+}
+</style>
+</head>
+<body>
+<h2>좌석 선택</h2>
+<label>
+	인원 선택: 
+	<select id="seatCount">
+		<option value="0">인원 수 선택</option>
+		<option value="1">1명</option>
+		<option value="2">2명</option>
+		<option value="3">3명</option>
+		<option value="4">4명</option>
+		<option value="5">5명</option>
+		<option value="6">6명</option>
+		<option value="7">7명</option>
+		<option value="8">8명</option>
+	</select>
+</label>
+
+<div class="seat-map" id="seatMap"></div>
+<p><strong>결제 금액: <span id="total-price">0</span>원</strong></p>
+<button id="payBtn">결제하기</button>
+
+<script th:inline="javascript">
+const seatMap = document.getElementById('seatMap');
+const payBtn = document.getElementById('payBtn');
+const priceDisplay = document.getElementById('total-price');
+const screeningId = /*[[${screening.id}]]*/ 0;
+const userId = /*[[${userId}]]*/ '로그인안됨';
+
+let selectedSeats = [];
+let pricePerSeat = 0;
+
+const rows = ['A', 'B', 'C', 'D', 'E'];
+const cols = 8;
+
+async function fetchSeatPrice() {
+    const res = await fetch(`/api/screening/price?screeningId=${screeningId}`);
+    const data = await res.json();
+    pricePerSeat = data.price;
+}
+
+async function fetchSoldSeats() {
+    const res = await fetch(`/booking/booked-seats?screeningId=${screeningId}`);
+    const bookings = await res.json();
+    const sold = [];
+    bookings.forEach(b => {
+        b.seatNumber.split(',').forEach(seat => sold.push(seat));
+    });
+    return sold;
+}
+
+async function renderSeats() {
+    const soldSeats = await fetchSoldSeats();
+    rows.forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'seat-row';
+        for (let x = 1; x <= cols; x++) {
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.textContent = `${row}${x}`;
+            if (row === 'E') seat.classList.add('couple-seat');
+
+            if (soldSeats.includes(seat.textContent)) {
+                seat.classList.add('sold');
+                seat.style.pointerEvents = 'none';
+            } else {
+                seat.onclick = () => toggleSeat(seat);
+            }
+            rowDiv.appendChild(seat);
+        }
+        seatMap.appendChild(rowDiv);
+    });
+}
+
+function toggleSeat(seat) {
+    const maxSeats = parseInt(document.getElementById('seatCount').value);
+    const seatName = seat.textContent;
+
+    if (maxSeats === 0) {
+        alert("먼저 인원을 선택하세요.");
+        return;
+    }
+
+    const isSelected = seat.classList.contains('selected');
+    const isCouple = seat.classList.contains('couple-seat');
+    let pairSeat = null;
+
+    if (isCouple) {
+        const row = seatName[0];
+        const number = parseInt(seatName.slice(1));
+        const pairNumber = number % 2 === 0 ? number - 1 : number + 1;
+        const pairSeatName = row + pairNumber;
+
+        // 같은 row 내에서 쌍 찾기
+        pairSeat = Array.from(seat.parentElement.querySelectorAll('.couple-seat'))
+                        .find(s => s.textContent === pairSeatName);
+
+        if (!pairSeat || pairSeat.classList.contains('sold')) {
+            alert("짝 좌석이 이미 판매되었거나 사용할 수 없습니다.");
+            return;
+        }
+    }
+
+    const seatsToAdd = isCouple ? 2 : 1;
+
+    if (!isSelected) {
+        if (selectedSeats.length + seatsToAdd > maxSeats) {
+            alert("선택한 인원을 초과했습니다.");
+            return;
+        }
+
+        seat.classList.add('selected');
+        selectedSeats.push(seatName);
+
+        if (isCouple && pairSeat) {
+            pairSeat.classList.add('selected');
+            selectedSeats.push(pairSeat.textContent);
+        }
+    } else {
+        seat.classList.remove('selected');
+        selectedSeats = selectedSeats.filter(s => s !== seatName);
+
+        if (isCouple && pairSeat && pairSeat.classList.contains('selected')) {
+            pairSeat.classList.remove('selected');
+            selectedSeats = selectedSeats.filter(s => s !== pairSeat.textContent);
+        }
+    }
+
+    updatePrice();
+    payBtn.style.display = (selectedSeats.length === maxSeats) ? 'block' : 'none';
+}
+
+function updatePrice() {
+    priceDisplay.textContent = (selectedSeats.length * pricePerSeat).toLocaleString();
+}
+
+payBtn.onclick = async () => {
+    if (selectedSeats.length === 0) {
+        alert("좌석을 선택해주세요.");
+        return;
+    }
+    const seatParam = selectedSeats.join(',');
+
+    const response = await fetch('/booking/reserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            screeningId,
+            seatNumber: seatParam,
+            userId
+        })
+    });
+
+    if (response.ok) {
+        const bookingId = await response.text();
+        location.href = `/payments?bookingId=${bookingId}`;
+    } else {
+        alert("예매 실패");
+    }
+};
+
+fetchSeatPrice().then(renderSeats);
+</script>
+</body>
+</html>
+

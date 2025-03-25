@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>스토어 상품목록 (결제 선택)</title>
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+.product-card {
+	width: 220px;
+	border-radius: 15px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	transition: transform 0.2s;
+	overflow: hidden;
+	text-align: center;
+	background-color: white;
+	position: relative;
+}
+
+.product-card:hover {
+	transform: scale(1.05);
+}
+
+.product-card img {
+	width: 100%;
+	height: 200px;
+	object-fit: cover;
+}
+
+.product-info {
+	padding: 10px;
+}
+
+.product-name {
+	font-weight: bold;
+	font-size: 16px;
+	color: #333;
+	height: 40px;
+}
+
+.product-price {
+	color: #e74c3c;
+	font-size: 14px;
+	margin-top: 5px;
+}
+
+.product-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+	justify-content: flex-start;
+}
+
+.product-check {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 20px;
+	height: 20px;
+}
+
+body {
+	background-color: #f8f9fa;
+	padding: 30px;
+}
+
+#totalPrice {
+	font-size: 20px;
+	font-weight: bold;
+	color: #2c3e50;
+}
+</style>
+<script th:inline="javascript">
+        function calculateTotal() {
+            let total = 0;
+
+            document.querySelectorAll('input[name="selected"]:checked').forEach(cb => {
+                total += parseInt(cb.getAttribute("data-price"));
+            });
+
+            document.getElementById("totalPrice").textContent =
+                total.toLocaleString() + " 원";
+        }
+
+        function submitPayment() {
+            const selected = Array.from(document.querySelectorAll('input[name="selected"]:checked'))
+                .map(cb => cb.value);
+
+            if (selected.length === 0) {
+                alert("결제할 상품을 선택해주세요.");
+                return false;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/pay/payments-store';
+
+            selected.forEach(seq => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'seqList';
+                input.value = seq;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[name="selected"]').forEach(cb => {
+                cb.addEventListener('change', calculateTotal);
+            });
+        });
+    </script>
+</head>
+<body>
+	<div class="container">
+		<h2 class="mb-4">스토어 상품목록</h2>
+		<div class="product-list">
+			<div class="product-card" th:each="dto : ${list}">
+				<input type="checkbox" class="product-check" name="selected"
+					th:value="${dto.seq}" th:data-price="${dto.imageprice}"> <a
+					th:href="@{/store/store_board_view2(pg=${pg}, seq=${dto.seq})}">
+					<img th:src="@{/storage/{img}(img=${dto.image1})}"
+					th:alt="${dto.imagename}">
+					<div class="product-info">
+						<div class="product-name">[[${dto.imagename}]]</div>
+						<div class="product-price">가격 : [[${dto.imageprice}]] 원</div>
+					</div>
+				</a>
+			</div>
+		</div>
+
+		<!-- 총 합계 금액 표시 -->
+		<div class="text-center mt-4">
+			선택 상품 총 금액: <span id="totalPrice">0 원</span>
+		</div>
+
+		<!-- 결제 버튼 -->
+		<div class="text-center mt-3">
+			<button class="btn btn-success btn-lg" onclick="submitPayment()">선택상품
+				결제하기</button>
+		</div>
+
+		<!-- 페이징 -->
+		<nav class="mt-4">
+			<ul class="pagination justify-content-center">
+				<li class="page-item" th:if="${startPage > 3}"><a
+					class="page-link"
+					th:href="@{/store/store_board_list2(pg=${startPage-1})}">이전</a></li>
+				<li class="page-item"
+					th:each="i : ${#numbers.sequence(startPage, endPage)}"
+					th:classappend="${pg == i} ? 'active'"><a class="page-link"
+					th:href="@{/store/store_board_list2(pg=${i})}"> [[${i}]] </a></li>
+				<li class="page-item" th:if="${endPage < totalP}"><a
+					class="page-link"
+					th:href="@{/store/store_board_list2(pg=${endPage+1})}">다음</a></li>
+			</ul>
+		</nav>
+
+		<div class="text-end mt-4">
+			<a href="/main" class="btn btn-primary">메인화면</a>
+		</div>
+	</div>
+</body>
+</html>
+

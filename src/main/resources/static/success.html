@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<<<<<<< HEAD
+<head>
+<meta charset="UTF-8">
+<title>결제 성공</title>
+<style>
+body {
+	background-color: #e9f1ff;
+	font-family: Arial, sans-serif;
+	text-align: center;
+	padding-top: 50px;
+}
+
+.wrapper {
+	background-color: #fff;
+	border-radius: 12px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	width: 450px;
+	padding: 30px;
+	margin: auto;
+}
+
+h2 {
+	color: #3182f6;
+	margin-top: 20px;
+}
+
+.success-icon {
+	width: 80px;
+	margin-top: 10px;
+}
+
+.info-box {
+	text-align: left;
+	margin-top: 20px;
+	padding: 10px;
+}
+
+.info-box div {
+	display: flex;
+	justify-content: space-between;
+	padding: 5px 0;
+}
+
+.button-container {
+	display: flex;
+	justify-content: center;
+	margin-top: 20px;
+}
+
+.button {
+	padding: 10px;
+	border: none;
+	width: 50%;
+	cursor: pointer;
+	border-radius: 6px;
+	font-size: 14px;
+}
+
+.btn-primary {
+	background-color: #3182f6;
+	color: white;
+}
+</style>
+</head>
+<body>
+
+	<div class="wrapper">
+		<img class="success-icon"
+			src="https://static.toss.im/illusts/check-blue-spot-ending-frame.png" />
+		<h2>결제를 완료했어요</h2>
+
+		<div class="info-box">
+			<div>
+				<b>결제금액</b> <span id="amount">불러오는 중...</span>
+			</div>
+			<div>
+				<b>주문번호</b> <span id="orderId">불러오는 중...</span>
+			</div>
+			<div>
+				<b>결제키</b> <span id="paymentKey">불러오는 중...</span>
+			</div>
+		</div>
+
+		<div class="button-container">
+			<button class="button btn-primary" onclick="location.href='/main'">메인으로</button>
+		</div>
+	</div>
+
+	<script>
+		const urlParams = new URLSearchParams(window.location.search);
+		const orderId = urlParams.get("orderId");
+		const paymentKey = urlParams.get("paymentKey");
+		let bookingId = null; // ✅ bookingId 저장할 변수
+
+		// ✅ bookingId 가져오는 함수 (orderId → bookingId 변환)
+		async function getBookingId() {
+			if (!orderId) {
+				console.error("❌ orderId가 없습니다.");
+				return;
+			}
+
+			try {
+				console.log("📌 서버에 orderId 요청: ", orderId);
+				const response = await fetch(`/api/booking/bookingId?orderId=${orderId}`);
+				if (!response.ok) throw new Error("bookingId를 불러올 수 없습니다.");
+
+				const data = await response.json();
+				if (!data.bookingId || data.bookingId === 0) throw new Error("올바른 bookingId가 없습니다.");
+
+				bookingId = data.bookingId;
+				console.log("✅ 가져온 bookingId:", bookingId);
+				await fetchPrice();  // ✅ bookingId를 가져온 후 결제 금액 조회 실행
+			} catch (error) {
+				console.error("❌ bookingId 로딩 실패:", error);
+				document.getElementById("amount").textContent = "오류";
+			}
+		}
+
+		// ✅ 결제된 예약의 가격을 서버에서 가져오는 함수
+		async function fetchPrice() {
+			if (!bookingId) {
+				console.error("❌ bookingId가 없습니다.");
+				return;
+			}
+
+			try {
+				console.log("📌 서버에 bookingId 요청: ", bookingId);
+				const response = await fetch(`/api/booking/price?bookingId=${bookingId}`);
+				if (!response.ok) throw new Error("결제 금액을 불러올 수 없습니다.");
+
+				const data = await response.json();
+				if (!data.price || isNaN(data.price)) {
+					throw new Error("서버에서 올바른 가격 데이터를 반환하지 않았습니다.");
+				}
+
+				document.getElementById("amount").textContent = data.price.toLocaleString() + "원";
+			} catch (error) {
+				console.error("❌ 결제 금액 로딩 실패:", error);
+				document.getElementById("amount").textContent = "오류";
+			}
+		}
+
+		// ✅ 결제 확인 함수 (결제 성공 여부 체크)
+		async function confirm() {
+			const requestData = {
+				paymentKey: paymentKey,
+				orderId: orderId,
+				amount: urlParams.get("amount"),
+			};
+
+			console.log("🔍 결제 확인 요청:", requestData);
+
+			const response = await fetch("/confirm", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(requestData),
+			});
+
+			const json = await response.json();
+			console.log("✅ 결제 확인 응답:", json);
+
+			if (!response.ok || json.status !== "success") {
+				console.error("❌ 결제 실패:", json);
+				window.location.href = `/fail.html?message=${json.message || '결제 실패'}&code=${json.code || 'ERROR'}`;
+				return;
+			}
+
+			await getBookingId(); // ✅ 결제 성공 후 bookingId 조회 및 가격 가져오기
+		}
+
+		// ✅ 페이지 로드 시 실행
+		confirm();
+
+		document.getElementById("orderId").textContent = orderId || "정보 없음";
+		document.getElementById("paymentKey").textContent = paymentKey || "정보 없음";
+	</script>
+
+</body>
+=======
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="https://static.toss.im/icons/png/4x/icon-toss-logo.png" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>토스페이먼츠 샘플 프로젝트</title>
+  </head>
+
+  <body>
+    <div class="box_section" style="width: 600px">
+      <img width="100px" src="https://static.toss.im/illusts/check-blue-spot-ending-frame.png" />
+      <h2>결제를 완료했어요</h2>
+
+      <div class="p-grid typography--p" style="margin-top: 50px">
+        <div class="p-grid-col text--left"><b>결제금액</b></div>
+        <div class="p-grid-col text--right" id="amount"></div>
+      </div>
+      <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>주문번호</b></div>
+        <div class="p-grid-col text--right" id="orderId"></div>
+      </div>
+      <div class="p-grid typography--p" style="margin-top: 10px">
+        <div class="p-grid-col text--left"><b>paymentKey</b></div>
+        <div class="p-grid-col text--right" id="paymentKey" style="white-space: initial; width: 250px"></div>
+      </div>
+      <div class="p-grid" style="margin-top: 30px">
+        <button class="button p-grid-col5" onclick="location.href='https://docs.tosspayments.com/guides/v2/payment-widget/integration';">연동 문서</button>
+        <button class="button p-grid-col5" onclick="location.href='https://discord.gg/A4fRFXQhRu';" style="background-color: #e8f3ff; color: #1b64da">실시간 문의</button>
+      </div>
+    </div>
+
+    <div class="box_section" style="width: 600px; text-align: left">
+      <b>Response Data :</b>
+      <div id="response" style="white-space: initial"></div>
+    </div>
+
+    <script>
+      // 쿼리 파라미터 값이 결제 요청할 때 보낸 데이터와 동일한지 반드시 확인하세요.
+      // 클라이언트에서 결제 금액을 조작하는 행위를 방지할 수 있습니다.
+      const urlParams = new URLSearchParams(window.location.search);
+
+      // 서버로 결제 승인에 필요한 결제 정보를 보내세요.
+      async function confirm() {
+        var requestData = {
+          paymentKey: urlParams.get("paymentKey"),
+          orderId: urlParams.get("orderId"),
+          amount: urlParams.get("amount"),
+        };
+
+        const response = await fetch("/confirm", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        const json = await response.json();
+
+        if (!response.ok) {
+          // TODO: 결제 실패 비즈니스 로직을 구현하세요.
+          console.log(json);
+          window.location.href = `/fail?message=${json.message}&code=${json.code}`;
+        }
+
+        // TODO: 결제 성공 비즈니스 로직을 구현하세요.
+        // console.log(json);
+        return json;
+      }
+      confirm().then(function (data) {
+        document.getElementById("response").innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
+      });
+
+      const paymentKeyElement = document.getElementById("paymentKey");
+      const orderIdElement = document.getElementById("orderId");
+      const amountElement = document.getElementById("amount");
+
+      orderIdElement.textContent = urlParams.get("orderId");
+      amountElement.textContent = urlParams.get("amount") + "원";
+      paymentKeyElement.textContent = urlParams.get("paymentKey");
+    </script>
+  </body>
+>>>>>>> 2617167 (first test)
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<a href="/main">메인 게시판</a><br><br>
+
+	<th:block th:if="${session.memId == null}">
+		<a href ="/member/loginForm">로그인</a><br>
+		<a href ="/member/writeForm">회원가입</a><br>
+	</th:block>
+	
+	<th:block th:if="${session.memId != null}">
+		<a href="/member/logout">로그아웃</a><br>
+		<a href="/member/modifyForm">회원정보수정</a><br>		
+		<a href="/mypageMain">my page</a><br>
+	</th:block>
+	
+	<th:block th:if="${session.memId == 'hong'}">
+		<a href="/admin/admin_index">관리자 페이지로</a>
+	</th:block>
+
+   <a href ="/customerServiceMain">고객 센터</a><br>
+   <a href ="/booking">예매</a><br>	
+   <a href ="/store/store_board_list2">스토어</a><br>
+</body>
+</html>
